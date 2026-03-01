@@ -1,0 +1,86 @@
+1. it comes in key value pairs, human readly. designed to be readly easily, with the proper identation as python.
+2. Access in a dictionary style.
+3. hierarchy through indentation:
+   address:
+     street: 123 main street st
+     city: skbdj
+4. components in yaml:
+   a. List: denoted by hyphen:
+     EX: fruits:
+           -apple
+           -orange
+    b. comments: it starts with # and can be placed anywhere.
+    c. data types: all kinds of data types can be inculded.
+    d. anchor & aliases: allow to reuse the components, achor defines a value(&) and alaias(*) refer back to it.
+        EX: default: &default_setting 
+              timeout: 30
+              retries: 3
+            server1:
+            <<: *default_setting
+            host: server1.example.com
+    e. yaml vs json: any valid json is also a valid yaml.
+5. file extension and Usage: 
+
+
+
+
+####################################################################
+Now, why are we using the dvc pipeline with the help of yaml file:
+Ques: we have changed our test_size from 0.2 to 0.35 and we need to see the change in the reuslt, for the improvement of the model:
+#1. Instead of running all the pipelines manually, the dvc will run all the pipelines automatically with all the log files.
+#2. so, we have create a config file called dvc.yaml.
+###########POWER OF dvc.yaml.
+#let say, the dvc has run the 2 pipelines previously, and tuck in 3rd. agian, we have ran the dvc.repro, now, the dvc will skip the 2 files which was previously got passed in checking.
+
+###################################################################
+#Concept of md5 in Dvc.yaml:
+When you run a pipeline using dvc repro, 
+1. DVC calculates a unique code (the MD5 hash) for every input (dependency) and every output.
+2. Change Detection: 
+     If you change even a single comma in your spam.csv or a line of code in Ingestion.py, the MD5 hash will change.
+3. Efficiency: 
+     DVC compares the new hash with the old one in dvc.lock. If they match, DVC knows nothing has changed and skips running that stage to save time.
+
+THIS IS A FILE WITH THE INFO, WITHOUT THE md5:
+stages:
+  ingest_data:
+    cmd: python src/Ingestion.py
+    deps:
+      - src/Ingestion.py
+      - experiments/spam.csv
+    outs:
+      - data/raw/train.csv
+      - data/raw/test.csv
+
+THIS IS THE FILE (dvc.lock) with the md5:
+schema: '2.0'
+stages:
+  ingest_data:
+    cmd: python src/Ingestion.py
+    deps:
+    - path: experiments/spam.csv
+      md5: a1b2c3d4e5f6g7h8i9j0...  # Fingerprint of your raw data
+    - path: src/Ingestion.py
+      md5: z9y8x7w6v5u4t3s2r1q0...  # Fingerprint of your code
+    outs:
+    - path: data/raw/train.csv
+      md5: 55f6e7d8c9b0a1...        # Fingerprint of the output
+#####################################################################
+Why this matters for your project:
+If you try to run your pipeline again without changing spam.csv, DVC will see that the current md5 of your data matches the one stored in dvc.lock. 
+It will show a message saying "Stage 'ingest_data' didn't change, skipping", which makes your work much faster!
+
+#####################################################################
+Important Commands:
+1. Initialize DVC
+Before running anything, ensure DVC is ready in your project folder.
+dvc Init
+2. Run the Pipeline
+This is the most important command. It reads your dvc.yaml file and executes the stages in the correct order.
+dvc repro
+3. Check the Status
+If you aren't sure if your data is up to date with your code, use:
+dvc Status
+4. Visualize the Pipeline (DAG) - direct acyclic graph.
+To see a text-based "map" of how your stages connect (Ingestion -> Transformation -> Training), use:
+dvc dag

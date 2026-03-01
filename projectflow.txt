@@ -25,14 +25,6 @@ Expermients with DVC:
 18> Now git add, commit, push
 
 
-
-
-
-
-
-
-
-
 -------------------------------------------------------------------------------
 
 params.yaml setup:
