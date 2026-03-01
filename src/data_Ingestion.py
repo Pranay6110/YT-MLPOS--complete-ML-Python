@@ -62,13 +62,31 @@ def preprocess_data(data_url: str) -> pd.DataFrame:
 
 #save the data now:
 
+import os
+import pandas as pd
+import logging
+
+logger = logging.getLogger("data_ingestion")
+
 def save_data(train_data: pd.DataFrame, test_data: pd.DataFrame, data_path: str) -> None:
-    """Saves the training and testing data to the specified file paths."""
+    """Saves the training and testing data to data/raw directory."""
     try:
-        raw_data_path = os.path.join(data_path, 'raw')
-        train_data.to_csv(os.path.join(raw_data_path, 'train.csv'), index=False)
-        test_data.to_csv(os.path.join(raw_data_path, 'test.csv'), index=False)
-        logger.debug("Data saved successfully to %s", raw_data_path)
+        # Create full raw directory path
+        raw_data_path = os.path.join(data_path, "raw")
+
+        # ✅ Create directory if it doesn't exist
+        os.makedirs(raw_data_path, exist_ok=True)
+
+        # File paths
+        train_file_path = os.path.join(raw_data_path, "train.csv")
+        test_file_path = os.path.join(raw_data_path, "test.csv")
+
+        # Save files
+        train_data.to_csv(train_file_path, index=False)
+        test_data.to_csv(test_file_path, index=False)
+
+        logger.info("Data saved successfully at %s", raw_data_path)
+
     except Exception as e:
         logger.error("Error saving data: %s", e)
         raise
@@ -82,7 +100,7 @@ def main():
         df = load_dataset(data_url=data_path)
         final_df = preprocess_data(data_url=data_path)
         train_data, test_data = train_test_split(final_df, test_size=test_size, random_state=2)
-        save_data(train_data, test_data, data_path='./data')
+        save_data(train_data, test_data, data_path='data')
     except Exception as e:
         logger.error('Failed to complete the data ingestion process: %s', e)
         print(f"Error: {e}")
